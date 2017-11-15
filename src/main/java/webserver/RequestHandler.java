@@ -21,8 +21,8 @@ import util.IOUtils;
 public class RequestHandler extends Thread {
 	private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 	private static final String WEB_BASE_DIR = System.getProperty("user.dir") + File.separator + "webapp";
-	private static final String INDEX_HTML = "index.html";
-	private static final String INDEX_JSP_PATH = WEB_BASE_DIR + File.separator + INDEX_HTML;
+	private static final String INDEX_HTML = "/index.html";
+	private static final String LOGIN_FAIL_HTML = "/user/login_failed.html";
 	private static final int URL_PATH = 1;
 	private static final int METHOD_TYPE = 0;
 
@@ -52,7 +52,7 @@ public class RequestHandler extends Thread {
 
 			if (urlPath.startsWith("/user/create") && "GET".equals(httpMethod)) {
 				DataBase.addUser(userParser(urlPath));
-				redirectIndex(dos);
+				redirectUrl(dos, INDEX_HTML);
 				return;
 			}
 
@@ -69,19 +69,39 @@ public class RequestHandler extends Thread {
 
 				User user = new User(HttpRequestUtils.parseQueryString(queryString));
 				DataBase.addUser(user);
-				redirectIndex(dos);
+				redirectUrl(dos, INDEX_HTML);
 				return;
 			}
 
+			if ("POST".equals(httpMethod) && urlPath.startsWith("user/login")) {
+				int contentLength = getContentLength(bufferedReader);
+				String queryString = IOUtils.readData(bufferedReader, contentLength);
+				User user = new User(HttpRequestUtils.parseQueryString(queryString));
+
+				if (DataBase.isValidToLogin(user)) {
+					responseWithCookie(dos, contentLength, true);
+					redirectUrl(dos, INDEX_HTML);
+					return;
+				}
+
+				responseWithCookie(dos, contentLength, false);
+				redirectUrl(dos, LOGIN_FAIL_HTML);
+			}
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
 	}
 
-	private void redirectIndex(DataOutputStream dos) throws IOException {
-		byte[] body = Files.readAllBytes(new File(INDEX_JSP_PATH).toPath());
-		response302Header(dos, body.length);
-//		responseBody(dos, body);
+	private void responseWithCookie(DataOutputStream dos, int lengthOfBodyContent, boolean logined) throws IOException {
+		dos.writeBytes("HTTP/1.1 200 OK \r\n");
+		dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+		dos.writeBytes("Set-Cookie: logined" + Boolean.toString(logined) + "\r\n");
+		dos.writeBytes("\r\n");
+	}
+
+	private void redirectUrl(DataOutputStream dos, String htmlPath) throws IOException {
+		byte[] body = Files.readAllBytes(new File(WEB_BASE_DIR + htmlPath).toPath());
+		response302Header(dos, body.length, htmlPath);
 	}
 
 	private int getContentLength(BufferedReader bufferedReader) throws IOException {
@@ -105,35 +125,24 @@ public class RequestHandler extends Thread {
 		return Files.readAllBytes(htmlFile.toPath());
 	}
 
-	private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
-		try {
-			dos.writeBytes("HTTP/1.1 200 OK \r\n");
-			dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
-			dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
-			dos.writeBytes("\r\n");
-		} catch (IOException e) {
-			log.error(e.getMessage());
-		}
+	private void response200Header(DataOutputStream dos, int lengthOfBodyContent) throws IOException {
+		dos.writeBytes("HTTP/1.1 200 OK \r\n");
+		dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+		dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+		dos.writeBytes("\r\n");
 	}
 
-	private void response302Header(DataOutputStream dos, int lengthOfBodyContent) {
-		try {
-			dos.writeBytes("HTTP/1.1 302 OK \r\n");
-			dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
-			dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
-			dos.writeBytes("Location: " + "/" + INDEX_HTML + "\r\n");
-			dos.writeBytes("\r\n");
-		} catch (IOException e) {
-			log.error(e.getMessage());
-		}
+	private void response302Header(DataOutputStream dos, int lengthOfBodyContent, String redirectUrl)
+			throws IOException {
+		dos.writeBytes("HTTP/1.1 302 OK \r\n");
+		dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+		dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+		dos.writeBytes("Location: " + "localhost:8080" + redirectUrl + "\r\n");
+		dos.writeBytes("\r\n");
 	}
 
-	private void responseBody(DataOutputStream dos, byte[] body) {
-		try {
-			dos.write(body, 0, body.length);
-			dos.flush();
-		} catch (IOException e) {
-			log.error(e.getMessage());
-		}
+	private void responseBody(DataOutputStream dos, byte[] body) throws IOException {
+		dos.write(body, 0, body.length);
+		dos.flush();
 	}
 }
