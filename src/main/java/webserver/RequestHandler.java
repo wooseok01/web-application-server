@@ -23,7 +23,7 @@ import util.IOUtils;
 
 public class RequestHandler extends Thread {
 	private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
-	private static final String WEB_BASE_DIR = System.getProperty("user.dir") + File.separator + "webapp";
+	private static final String WEB_BASE_DIR = "./webapp";
 	private static final String INDEX_HTML = "/index.html";
 	private static final String LOGIN_HTML = "/user/login.html";
 	private static final String LOGIN_FAIL_HTML = "/user/login_failed.html";
@@ -57,7 +57,6 @@ public class RequestHandler extends Thread {
 			}
 
 			// get과 post를 먼저 나눈다.
-
 			if ("GET".equals(httpMethod)) {
 				doGet(urlPath, bufferedReader, dos);
 			} else if ("POST".equals(httpMethod)) {
@@ -139,6 +138,8 @@ public class RequestHandler extends Thread {
 
 			fileString = bufferedReader.readLine();
 		}
+		
+		bufferedReader.close();
 
 		return stringBuilder.toString();
 	}
@@ -213,8 +214,8 @@ public class RequestHandler extends Thread {
 		return Files.readAllBytes(htmlFile.toPath());
 	}
 
-	private void response200Header(DataOutputStream dos, int lengthOfBodyContent, String contentType) throws
-		IOException {
+	private void response200Header(DataOutputStream dos, int lengthOfBodyContent, String contentType)
+		throws IOException {
 		dos.writeBytes("HTTP/1.1 200 OK \r\n");
 		dos.writeBytes("Content-Type: " + contentType + ";charset=utf-8\r\n");
 		dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
