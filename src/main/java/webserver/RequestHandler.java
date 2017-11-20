@@ -1,14 +1,9 @@
 package webserver;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.util.Iterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,10 +12,11 @@ import db.DataBase;
 import model.HttpRequest;
 import model.HttpResponse;
 import model.User;
+import util.HttpRequestUtils;
+import util.IOUtils;
 
 public class RequestHandler extends Thread {
 	private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
-	private static final String WEB_BASE_DIR = "./webapp";
 	private static final String INDEX_HTML = "/index.html";
 	private static final String LOGIN_HTML = "/user/login.html";
 	private static final String LOGIN_FAIL_HTML = "/user/login_failed.html";
@@ -39,7 +35,7 @@ public class RequestHandler extends Thread {
 			connection.getPort());
 
 		try (InputStream in = connection.getInputStream();
-			OutputStream out = connection.getOutputStream();) {
+			 OutputStream out = connection.getOutputStream()) {
 
 			HttpRequest request = new HttpRequest(in);
 			HttpResponse response = new HttpResponse(out);
@@ -87,20 +83,24 @@ public class RequestHandler extends Thread {
 			DataBase.addUser(new User(request.getHttpRequestParameters()));
 			response.sendRedirect(INDEX_HTML);
 
-		} else if (request.getPath().endsWith(".html") || request.getPath().endsWith(".css")) {
-			byte[] body = htmlParser(request.getPath());
-			response.response200Header(body.length, getContentType(request.getPath()));
+		} else if (isStaticFile(request.getPath())) {
+			byte[] body = IOUtils.htmlParser(request.getPath());
+			response.response200Header(body.length, HttpRequestUtils.getContentType(request.getPath()));
 			response.responseBody(body);
 
 		} else if ("/user/list".equals(request.getPath())) {
 			if (isLogin(request.getHeader("Cookie"))) {
-				String listHtmlContents = readFile(USER_LIST_HTML, makeUserListHtml());
+				String listHtmlContents = IOUtils.appendUserList(USER_LIST_HTML, IOUtils.makeUserListHtml(), T_BODY_TAG);
 				response.responseBody(listHtmlContents.getBytes());
 				return;
 			}
 
 			response.sendRedirect(LOGIN_HTML);
 		}
+	}
+
+	private boolean isStaticFile(String path) {
+		return path.endsWith(".html") || path.endsWith(".css") || path.endsWith(".js");
 	}
 
 	private boolean isLogin(String cookieString) {
@@ -110,60 +110,5 @@ public class RequestHandler extends Thread {
 		}
 
 		return false;
-	}
-
-	private String getContentType(String urlPath) {
-		if (urlPath.endsWith(".html")) {
-			return "text/html";
-		} else if (urlPath.endsWith(".css")) {
-			return "text/css";
-		}
-
-		return "text/html";
-	}
-
-	private String readFile(String userListHtml, String appendString) throws IOException {
-		File file = new File(new File(WEB_BASE_DIR), userListHtml);
-		FileReader fileReader = new FileReader(file);
-		BufferedReader bufferedReader = new BufferedReader(fileReader);
-
-		String fileString = bufferedReader.readLine();
-		StringBuilder stringBuilder = new StringBuilder();
-
-		while (fileString != null) {
-			stringBuilder.append(fileString);
-			if (fileString.equals(T_BODY_TAG)) {
-				stringBuilder.append(appendString);
-			}
-
-			fileString = bufferedReader.readLine();
-		}
-
-		bufferedReader.close();
-
-		return stringBuilder.toString();
-	}
-
-	private String makeUserListHtml() {
-		StringBuilder stringBuilder = new StringBuilder();
-		Iterator<User> users = DataBase.findAll().iterator();
-		int index = 1;
-
-		while (users.hasNext()) {
-			User user = users.next();
-			stringBuilder.append("<tr>");
-			stringBuilder.append("<th>" + index + "</th>");
-			stringBuilder.append("<td>" + user.getUserId() + "</td>");
-			stringBuilder.append("<td>" + user.getName() + "</td>");
-			stringBuilder.append("<td>" + user.getEmail() + "</td>");
-			stringBuilder.append("</tr>");
-		}
-
-		return stringBuilder.toString();
-	}
-
-	private byte[] htmlParser(String httpHeader) throws IOException {
-		File htmlFile = new File(new File(WEB_BASE_DIR), httpHeader);
-		return Files.readAllBytes(htmlFile.toPath());
 	}
 }

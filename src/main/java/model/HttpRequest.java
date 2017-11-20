@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import util.HttpRequestUtils;
+import util.IOUtils;
 
 public class HttpRequest {
 	private static final int URL_PATH = 1;
@@ -28,8 +29,9 @@ public class HttpRequest {
 		this.httpRequestHeader = new HashMap<>();
 		this.httpRequestParameters = new HashMap<>();
 
-		try (InputStreamReader in = new InputStreamReader(is);
-			BufferedReader br = new BufferedReader(in);) {
+		try {
+			InputStreamReader in = new InputStreamReader(is);
+			BufferedReader br = new BufferedReader(in);
 
 			requestHeader = br.readLine();
 			setRequestHeader(br);
@@ -49,7 +51,7 @@ public class HttpRequest {
 				setParameters(queryString);
 			} else if ("POST".equals(httpRequestHeader.get(METHOD))) {
 				httpRequestHeader.put(PATH, path);
-				setParameters(br.readLine());
+				setParameters(IOUtils.readData(br, Integer.parseInt(httpRequestHeader.get("Content-Length"))));
 			}
 		} catch (IOException e) {
 			log.error("ioException!");
