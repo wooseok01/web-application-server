@@ -49,6 +49,7 @@ public class HttpRequest {
 
 				String queryString = path.split("\\?")[1];
 				setParameters(queryString);
+
 			} else if ("POST".equals(httpRequestHeader.get(METHOD))) {
 				httpRequestHeader.put(PATH, path);
 				setParameters(IOUtils.readData(br, Integer.parseInt(httpRequestHeader.get("Content-Length"))));

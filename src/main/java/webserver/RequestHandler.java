@@ -36,7 +36,7 @@ public class RequestHandler extends Thread {
 				return;
 			}
 
-			Controller controller = RequestMapping.getController(request.getMethod());
+			Controller controller = RequestMapping.getController(request.getPath());
 			if (controller != null) {
 				controller.service(request, response);
 				return;
