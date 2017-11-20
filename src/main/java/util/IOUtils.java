@@ -37,7 +37,7 @@ public class IOUtils {
 
 		while (fileString != null) {
 			stringBuilder.append(fileString);
-			if (fileString.equals(targetStr)) {
+			if (fileString.contains(targetStr)) {
 				stringBuilder.append(appendString);
 			}
 
