@@ -34,10 +34,10 @@ public class HttpResponse {
 		dos.writeBytes("\r\n");
 	}
 
-	public void responseWithCookie(boolean logined) throws IOException {
+	public void responseWithCookie(boolean isLogin) throws IOException {
 		dos.writeBytes("HTTP/1.1 200 OK \r\n");
 		dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
-		dos.writeBytes("Set-Cookie: logined=" + Boolean.toString(logined) + "\r\n");
+		dos.writeBytes("Set-Cookie: logined=" + Boolean.toString(isLogin) + "\r\n");
 		dos.writeBytes("\r\n");
 	}
 
