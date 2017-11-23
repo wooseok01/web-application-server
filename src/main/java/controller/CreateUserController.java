@@ -3,8 +3,8 @@ package controller;
 import java.io.IOException;
 
 import db.DataBase;
-import model.HttpRequest;
-import model.HttpResponse;
+import http.HttpRequest;
+import http.HttpResponse;
 import model.User;
 import util.Constants;
 

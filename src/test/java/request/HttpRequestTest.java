@@ -9,7 +9,7 @@ import java.io.InputStream;
 
 import org.junit.Test;
 
-import model.HttpRequest;
+import http.HttpRequest;
 
 public class HttpRequestTest {
 	private static final String BASE_DIR = System.getProperty("user.dir");

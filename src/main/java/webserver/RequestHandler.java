@@ -4,13 +4,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import controller.Controller;
-import model.HttpRequest;
-import model.HttpResponse;
+import http.HttpRequest;
+import http.HttpResponse;
 import util.HttpRequestUtils;
 import util.IOUtils;
 
@@ -31,6 +32,10 @@ public class RequestHandler extends Thread {
 
 			HttpRequest request = new HttpRequest(in);
 			HttpResponse response = new HttpResponse(out);
+
+			if (request.getCookies().getCookie("JSESSIONID") == null) {
+				response.setHeader("Set-Cookie", "JSESSIONID=" + UUID.randomUUID());
+			}
 
 			if (request.getPath() == null || "".equals(request.getPath())) {
 				return;

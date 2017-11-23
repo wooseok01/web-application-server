@@ -2,8 +2,9 @@ package controller;
 
 import java.io.IOException;
 
-import model.HttpRequest;
-import model.HttpResponse;
+import http.HttpCookie;
+import http.HttpRequest;
+import http.HttpResponse;
 import util.Constants;
 import util.IOUtils;
 
@@ -14,9 +15,10 @@ public class ListUserController implements Controller {
 
 	@Override
 	public void service(HttpRequest request, HttpResponse response) throws IOException {
-		if (isLogin(request.getHeader("Cookie"))) {
+		if (isLogin(request)) {
 			String listHtmlContents = IOUtils.appendUserList(Constants.USER_LIST_HTML, IOUtils.makeUserListHtml(),
 				Constants.T_BODY_TAG);
+			response.response200Header(listHtmlContents.getBytes().length, "text/html");
 			response.responseBody(listHtmlContents.getBytes());
 			return;
 		}
@@ -24,9 +26,10 @@ public class ListUserController implements Controller {
 		response.sendRedirect(Constants.LOGIN_HTML);
 	}
 
-	private boolean isLogin(String cookieString) {
-		if (cookieString.contains(Constants.COOKIE_LOGIN_KEY)) {
-			String cookieValue = cookieString.split("=")[1];
+	private boolean isLogin(HttpRequest request) {
+		HttpCookie httpCookie = request.getCookies();
+		String cookieValue = httpCookie.getCookie(Constants.COOKIE_LOGIN_KEY);
+		if (cookieValue != null) {
 			return Boolean.parseBoolean(cookieValue);
 		}
 

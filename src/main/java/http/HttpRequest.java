@@ -1,4 +1,4 @@
-package model;
+package http;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,6 +22,7 @@ public class HttpRequest {
 	private Map<String, String> httpRequestHeader;
 	private Map<String, String> httpRequestParameters;
 	private String requestHeader;
+	private HttpCookie httpCookie;
 
 	private static final Logger log = LoggerFactory.getLogger(HttpRequest.class);
 
@@ -35,6 +36,7 @@ public class HttpRequest {
 
 			requestHeader = br.readLine();
 			setRequestHeader(br);
+			this.httpCookie = new HttpCookieImpl(httpRequestHeader.get("Cookie"));
 
 			httpRequestHeader.put(METHOD, requestHeader.split(" ")[METHOD_TYPE]);
 			String path = requestHeader.split(" ")[URL_PATH];
@@ -60,6 +62,10 @@ public class HttpRequest {
 
 	}
 
+	public HttpCookie getCookies() {
+		return this.httpCookie;
+	}
+
 	private void setParameters(String queryString) {
 		this.httpRequestParameters = HttpRequestUtils.parseQueryString(queryString);
 	}
@@ -67,8 +73,8 @@ public class HttpRequest {
 	private void setRequestHeader(BufferedReader br) throws IOException {
 		String line = br.readLine();
 		while (line != null && line.length() > 0) {
-			String key = line.split(" ")[0].replaceAll(":", "");
-			httpRequestHeader.put(key, line.split(" ")[1]);
+			String key = line.split(": ")[0].replaceAll(":", "");
+			httpRequestHeader.put(key, line.split(": ")[1]);
 
 			line = br.readLine();
 		}
