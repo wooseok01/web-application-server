@@ -36,7 +36,7 @@ public class HttpRequest {
 
 			requestHeader = br.readLine();
 			setRequestHeader(br);
-			this.httpCookie = new HttpCookieImpl(httpRequestHeader.get("Cookie"));
+			this.httpCookie = new HttpCookie(httpRequestHeader.get("Cookie"));
 
 			httpRequestHeader.put(METHOD, requestHeader.split(" ")[METHOD_TYPE]);
 			String path = requestHeader.split(" ")[URL_PATH];
@@ -100,4 +100,7 @@ public class HttpRequest {
 		return httpRequestParameters;
 	}
 
+	public HttpSession getSession() {
+		return HttpSessions.getSession(getCookies().getCookie("JSESSIONID"));
+	}
 }

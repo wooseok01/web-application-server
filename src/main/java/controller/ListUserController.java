@@ -2,9 +2,9 @@ package controller;
 
 import java.io.IOException;
 
-import http.HttpCookie;
 import http.HttpRequest;
 import http.HttpResponse;
+import http.HttpSession;
 import util.Constants;
 import util.IOUtils;
 
@@ -27,12 +27,11 @@ public class ListUserController implements Controller {
 	}
 
 	private boolean isLogin(HttpRequest request) {
-		HttpCookie httpCookie = request.getCookies();
-		String cookieValue = httpCookie.getCookie(Constants.COOKIE_LOGIN_KEY);
-		if (cookieValue != null) {
-			return Boolean.parseBoolean(cookieValue);
+		HttpSession httpSession = request.getSession();
+		if (httpSession.getAttribute("user") == null) {
+			return false;
 		}
 
-		return false;
+		return true;
 	}
 }
